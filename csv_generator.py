@@ -39,35 +39,40 @@ def prange(start,stop,step):
         r += step
     return vals
 
+
 df = pd.read_csv(original_csv)
 bad_columns = []
+new_data = pd.DataFrame()
+good_columns = []
 for key in df.keys():
-    print key
+    
     column = pd.DataFrame(df[key])
     if (type(float()) == column.dtypes).any() or (type(int()) == column.dtypes).any():
         result = stats.mstats.normaltest(column)[1]
+        if (result < 0.05):
+            bad_columns.append(key)
+        else:
+            good_columns.append(key)
     else:
-        not_int_float = True
-        continue
-    if (result < 0.05) or not_int_float:
-        bad_columns.append(key)
-        
-new_data = []
+        new_data = pd.concat([new_data,df[key]],axis=1)
+
+
 
 for key in df.keys():
-    num_rows = df[key].count
+    num_rows = df[key].count()
     
-    if not key in bad_columns:
+    if  key in good_columns:
         
+        print key
         column = df[key]
         is_int = (type(float()) == column.dtypes) or (type(int()) == column.dtypes)
         if not is_int:
             continue
 
-        mean = float(pd.stats.moments.expanding_mean(column))
-        st_d = float(pd.stats.moments.expanding_std(column))
-        skew = float(pd.stats.moments.expanding_skew(column))
-        kurtorsis = float(pd.stats.moments.expanding_kurt(column))
+        mean = float(pd.stats.moments.expanding_mean(column).irow(-1))
+        st_d = float(pd.stats.moments.expanding_std(column).irow(-1))
+        skew = float(pd.stats.moments.expanding_skew(column).irow(-1))
+        kurtorsis = float(pd.stats.moments.expanding_kurt(column).irow(-1))
         #append in pandas does not work like it does with lists.
         data = []
         first_sigma = []
@@ -82,13 +87,13 @@ for key in df.keys():
         lower_bound_three = mean - st_d * 3
         upper_bound_three = mean + st_d * 3
         #checking to see if we are dealing with int's or float's.
-        if (type(float()) == column.dtypes).any(): #this is fine because we are assured only a single column
+        if type(float()) == column.dtypes: #this is fine because we are assured only a single column
             pool_one = prange(lower_bound_one,upper_bound_one,0.01)
             pool_two_lower = prange(lower_bound_two,lower_bound_one,0.01)
             pool_two_upper = prange(upper_bound_one,upper_bound_two,0.01)
             pool_three_lower = prange(lower_bound_three,lower_bound_two,0.01)
             pool_three_upper = prange(upper_bound_two,upper_bound_three,0.01)
-        elif (type(int()) == column.dtypes).any():
+        elif type(int()) == column.dtypes:
             pool_one = range(int(lower_bound_one),int(upper_bound_one))
             pool_two_lower = range(int(lower_bound_two),int(lower_bound_one))
             pool_two_upper = range(int(upper_bound_one),int(upper_bound_two))
@@ -118,22 +123,25 @@ for key in df.keys():
             
             data = first_sigma + second_sigma_lower + second_sigma_upper + third_sigma_lower + third_sigma_upper 
             tmp_df = pd.DataFrame({key:data})
-        new_data.append(tmp_df)
+        new_data = pd.concat([new_data,tmp_df],axis=1)
         #You need to set up a temporary variable and set it equal to the result of the append
         #Then you need to set the tmp equal to the variable you want.  This seems dumb. What am I missing?
-    else:
+    elif key in bad_columns:
         column = df[key]
-        
+
         max_val = int(column.max())
         min_val = int(column.min())
         
         data = random.sample(column, len(column)/3)
         while len(data) < len(column):
+            
             data.append(np.nan)
         tmp_df = pd.DataFrame({key:data})
         tmp_df = tmp_df.interpolate()
-        new_data.append(tmp_df)
+        new_data = pd.concat([new_data,tmp_df],axis=1)
+    else:
+        continue
 
-new_df = pd.concat(new_data)
-#fix this
-new_df.to_csv(new_csv)
+
+
+new_data.to_csv(new_csv)
