@@ -18,6 +18,7 @@ python csv_generator.py [old csv file] [name of new csv file]
 import pandas as pd
 from scipy import stats
 from sys import argv
+import random
 
 original_csv = argv[1]
 new_csv = argv[2]
@@ -89,19 +90,19 @@ for key in df.keys():
             if i == 0:
                 data.append(mean)
             elif len(first_sigma) < int((num_rows*.341)*2):
-                elem = pool_one[random.randint(0,len(pool_one))]
+                elem = pool_one[random.randint(0,len(pool_one)-1)]
                 first_sigma.append(elem)
             elif len(second_sigma_lower) < int((num_rows*0.136)):
-                elem = pool_two_lower[random.randint(0,len(pool_two_lower))]
+                elem = pool_two_lower[random.randint(0,len(pool_two_lower)-1)]
                 second_sigma_lower.append(elem)
             elif len(second_sigma_upper) < int((num_rows*0.136)):
-                elem = pool_two_upper[random.randint(0,len(pool_two_upper))]
+                elem = pool_two_upper[random.randint(0,len(pool_two_upper)-1)]
                 second_sigma_upper.append(elem)
             elif len(third_sigma_lower) < int((num_rows*0.021)):
-                elem = pool_two_lower[random.randint(0,len(pool_three_lower))]
+                elem = pool_two_lower[random.randint(0,len(pool_three_lower)-1)]
                 third_sigma_lower.append(elem)
             elif len(third_sigma_upper) < int((num_rows*0.021)):
-                elem = pool_three_upper[random.randint(0,len(pool_three_upper))]
+                elem = pool_three_upper[random.randint(0,len(pool_three_upper)-1)]
                 third_sigma_upper.append(elem)
             
             data = first_sigma + second_sigma_lower + second_sigma_upper + third_sigma_lower + third_sigma_upper 
@@ -109,4 +110,20 @@ for key in df.keys():
         #You need to set up a temporary variable and set it equal to the result of the append
         #Then you need to set the tmp equal to the variable you want.  This seems dumb. What am I missing?
     else:
-        #run the simple preturbment
+        column = df[key]
+        if  (type(float()) == column.dtypes).any() or (type(int()) == column.dtypes).any(): 
+            max_val = int(column.max())
+            min_val = int(column.min())
+            data = []
+            population = prange(min_val,max_val,0.01)
+            while len(data) < int(column.count):
+                if (type(int()) == column.dtypes).any():
+                    elem = random.randint(min_val,max_val)
+                    data.append(elem)
+                else:
+                    elem = population[random.randint(0,len(population)-1)]
+                    data.append(elem)
+        new_data = new_data.append({key:data})
+                    
+        else:
+            continue
