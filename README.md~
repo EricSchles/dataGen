@@ -1,0 +1,8 @@
+#Data Gen - A command line tool for generating random data
+
+You can use Data Gen to, specifically csv_generator.py to generate new data from old.
+
+#How to use:
+
+python csv_generator.py [name of old csv] [name of new csv file]
+
